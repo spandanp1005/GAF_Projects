@@ -44,7 +44,7 @@ def init_db():
         cursor.execute("DELETE FROM sqlite_sequence WHERE name='contacts'")
         
         conn.commit()
-        print("🔄 Database initialized - Contact IDs will start from 1")
+        print("Database initialized - Contact IDs will start from 1")
 
 def get_db_connection():
     """
@@ -228,9 +228,9 @@ def success():
 # Main entry point of the application
 # This block ensures the Flask app runs only when the script is executed directly
 if __name__ == '__main__':
-    print("🚀 Starting NetGen Contact Registration System...")
-    print("📍 Server will be available at: http://localhost:5000")
-    print("🔄 Contact IDs reset to start from 1 for this session")
+    print("Starting NetGen Contact Registration System...")
+    print("Server will be available at: http://localhost:5000")
+    print("Contact IDs reset to start from 1 for this session")
     print("=" * 60)
     
     # Run the Flask application
@@ -240,6 +240,6 @@ if __name__ == '__main__':
         app.run(debug=True, host='0.0.0.0', port=5000)
     except KeyboardInterrupt:
         print("\n" + "=" * 60)
-        print("🛑 Server stopped by user")
-        print("💾 All session data has been cleared")
-        print("🔄 Contact IDs will reset to 1 on next startup")
+        print("Server stopped by user")
+        print("All session data has been cleared")
+        print("Contact IDs will reset to 1 on next startup")

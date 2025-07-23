@@ -18,12 +18,18 @@ DATABASE = 'contacts.db'
 
 def init_db():
     """
-    Initialize the SQLite database and create the contacts table if it doesn't exist.
+    Initialize the SQLite database and create the contacts table.
+    Clears existing data and resets ID counter to start fresh each session.
     """
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
+        
+        # Drop the table if it exists (this clears all data)
+        cursor.execute('DROP TABLE IF EXISTS contacts')
+        
+        # Create the table fresh
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS contacts (
+            CREATE TABLE contacts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT,
@@ -33,7 +39,12 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        
+        # Reset the SQLite sequence counter to start from 1
+        cursor.execute("DELETE FROM sqlite_sequence WHERE name='contacts'")
+        
         conn.commit()
+        print("🔄 Database initialized - Contact IDs will start from 1")
 
 def get_db_connection():
     """
@@ -43,7 +54,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# Initialize the database when the app starts
+# Initialize the database when the app starts (resets contact IDs to start from 1)
 init_db()
 
 # Route to serve the index.html file
@@ -217,7 +228,18 @@ def success():
 # Main entry point of the application
 # This block ensures the Flask app runs only when the script is executed directly
 if __name__ == '__main__':
+    print("🚀 Starting NetGen Contact Registration System...")
+    print("📍 Server will be available at: http://localhost:5000")
+    print("🔄 Contact IDs reset to start from 1 for this session")
+    print("=" * 60)
+    
     # Run the Flask application
     # debug=True allows for automatic reloading on code changes and provides a debugger
     # host='0.0.0.0' makes the server accessible from any IP address, useful for hosting
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    try:
+        app.run(debug=True, host='0.0.0.0', port=5000)
+    except KeyboardInterrupt:
+        print("\n" + "=" * 60)
+        print("🛑 Server stopped by user")
+        print("💾 All session data has been cleared")
+        print("🔄 Contact IDs will reset to 1 on next startup")

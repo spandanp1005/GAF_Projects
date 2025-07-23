@@ -186,6 +186,7 @@ def success():
     """
     Route to display the success page after form submission.
     Expects contact_id as a query parameter to display the saved contact.
+    Now includes navigation information for browsing between contacts.
     """
     contact_id = request.args.get('contact_id')
     
@@ -194,17 +195,36 @@ def success():
         return redirect('/')
     
     try:
-        # Retrieve the specific contact from database
+        contact_id = int(contact_id)
+    except ValueError:
+        # If contact_id is not a valid integer, redirect to home page
+        return redirect('/')
+    
+    try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
+            
+            # Get all contacts ordered by ID to determine navigation
+            cursor.execute('SELECT id FROM contacts ORDER BY id ASC')
+            all_contact_ids = [row['id'] for row in cursor.fetchall()]
+            
+            # Check if the requested contact exists
+            if contact_id not in all_contact_ids:
+                return redirect('/')
+            
+            # Get the specific contact
             cursor.execute('SELECT * FROM contacts WHERE id = ?', (contact_id,))
             contact = cursor.fetchone()
             
-            if not contact:
-                # If contact not found, redirect to home page
-                return redirect('/')
+            # Find current position in the list
+            current_index = all_contact_ids.index(contact_id)
+            total_contacts = len(all_contact_ids)
             
-            # Convert to dictionary for template
+            # Determine previous and next contact IDs
+            prev_contact_id = all_contact_ids[current_index - 1] if current_index > 0 else None
+            next_contact_id = all_contact_ids[current_index + 1] if current_index < total_contacts - 1 else None
+            
+            # Convert contact to dictionary for template
             contact_data = {
                 "id": contact["id"],
                 "name": contact["name"],
@@ -215,7 +235,17 @@ def success():
                 "created_at": contact["created_at"]
             }
             
-            return render_template('success.html', contact=contact_data)
+            # Navigation information
+            navigation = {
+                "current_position": current_index + 1,  # 1-based for display
+                "total_contacts": total_contacts,
+                "prev_contact_id": prev_contact_id,
+                "next_contact_id": next_contact_id,
+                "has_prev": prev_contact_id is not None,
+                "has_next": next_contact_id is not None
+            }
+            
+            return render_template('success.html', contact=contact_data, navigation=navigation)
             
     except sqlite3.Error as e:
         # On database error, redirect to home page

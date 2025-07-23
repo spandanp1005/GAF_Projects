@@ -1,5 +1,5 @@
 # Import necessary modules from Flask
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect
 import os
 import sqlite3
 import json
@@ -168,6 +168,51 @@ def get_contacts():
     
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+
+@app.route('/success')
+def success():
+    """
+    Route to display the success page after form submission.
+    Expects contact_id as a query parameter to display the saved contact.
+    """
+    contact_id = request.args.get('contact_id')
+    
+    if not contact_id:
+        # If no contact_id provided, redirect to home page
+        return redirect('/')
+    
+    try:
+        # Retrieve the specific contact from database
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM contacts WHERE id = ?', (contact_id,))
+            contact = cursor.fetchone()
+            
+            if not contact:
+                # If contact not found, redirect to home page
+                return redirect('/')
+            
+            # Convert to dictionary for template
+            contact_data = {
+                "id": contact["id"],
+                "name": contact["name"],
+                "email": contact["email"],
+                "phone": contact["phone"],
+                "address": contact["address"],
+                "message": contact["message"],
+                "created_at": contact["created_at"]
+            }
+            
+            return render_template('success.html', contact=contact_data)
+            
+    except sqlite3.Error as e:
+        # On database error, redirect to home page
+        return redirect('/')
+    
+    except Exception as e:
+        # On any other error, redirect to home page
+        return redirect('/')
 
 # Main entry point of the application
 # This block ensures the Flask app runs only when the script is executed directly

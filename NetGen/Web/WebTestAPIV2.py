@@ -1,5 +1,5 @@
 # Import necessary modules from Flask
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect
 import os
 import sqlite3
 import json
@@ -18,12 +18,18 @@ DATABASE = 'contacts.db'
 
 def init_db():
     """
-    Initialize the SQLite database and create the contacts table if it doesn't exist.
+    Initialize the SQLite database and create the contacts table.
+    Clears existing data and resets ID counter to start fresh each session.
     """
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
+        
+        # Drop the table if it exists (this clears all data)
+        cursor.execute('DROP TABLE IF EXISTS contacts')
+        
+        # Create the table fresh
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS contacts (
+            CREATE TABLE contacts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT,
@@ -33,7 +39,12 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        
+        # Reset the SQLite sequence counter to start from 1
+        cursor.execute("DELETE FROM sqlite_sequence WHERE name='contacts'")
+        
         conn.commit()
+        print("Database initialized - Contact IDs will start from 1")
 
 def get_db_connection():
     """
@@ -43,7 +54,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# Initialize the database when the app starts
+# Initialize the database when the app starts (resets contact IDs to start from 1)
 init_db()
 
 # Route to serve the index.html file
@@ -169,10 +180,96 @@ def get_contacts():
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+
+@app.route('/success')
+def success():
+    """
+    Route to display the success page after form submission.
+    Expects contact_id as a query parameter to display the saved contact.
+    Now includes navigation information for browsing between contacts.
+    """
+    contact_id = request.args.get('contact_id')
+    
+    if not contact_id:
+        # If no contact_id provided, redirect to home page
+        return redirect('/')
+    
+    try:
+        contact_id = int(contact_id)
+    except ValueError:
+        # If contact_id is not a valid integer, redirect to home page
+        return redirect('/')
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Get all contacts ordered by ID to determine navigation
+            cursor.execute('SELECT id FROM contacts ORDER BY id ASC')
+            all_contact_ids = [row['id'] for row in cursor.fetchall()]
+            
+            # Check if the requested contact exists
+            if contact_id not in all_contact_ids:
+                return redirect('/')
+            
+            # Get the specific contact
+            cursor.execute('SELECT * FROM contacts WHERE id = ?', (contact_id,))
+            contact = cursor.fetchone()
+            
+            # Find current position in the list
+            current_index = all_contact_ids.index(contact_id)
+            total_contacts = len(all_contact_ids)
+            
+            # Determine previous and next contact IDs
+            prev_contact_id = all_contact_ids[current_index - 1] if current_index > 0 else None
+            next_contact_id = all_contact_ids[current_index + 1] if current_index < total_contacts - 1 else None
+            
+            # Convert contact to dictionary for template
+            contact_data = {
+                "id": contact["id"],
+                "name": contact["name"],
+                "email": contact["email"],
+                "phone": contact["phone"],
+                "address": contact["address"],
+                "message": contact["message"],
+                "created_at": contact["created_at"]
+            }
+            
+            # Navigation information
+            navigation = {
+                "current_position": current_index + 1,  # 1-based for display
+                "total_contacts": total_contacts,
+                "prev_contact_id": prev_contact_id,
+                "next_contact_id": next_contact_id,
+                "has_prev": prev_contact_id is not None,
+                "has_next": next_contact_id is not None
+            }
+            
+            return render_template('success.html', contact=contact_data, navigation=navigation)
+            
+    except sqlite3.Error as e:
+        # On database error, redirect to home page
+        return redirect('/')
+    
+    except Exception as e:
+        # On any other error, redirect to home page
+        return redirect('/')
+
 # Main entry point of the application
 # This block ensures the Flask app runs only when the script is executed directly
 if __name__ == '__main__':
+    print("Starting NetGen Contact Registration System...")
+    print("Server will be available at: http://localhost:5000")
+    print("Contact IDs reset to start from 1 for this session")
+    print("=" * 60)
+    
     # Run the Flask application
     # debug=True allows for automatic reloading on code changes and provides a debugger
     # host='0.0.0.0' makes the server accessible from any IP address, useful for hosting
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    try:
+        app.run(debug=True, host='0.0.0.0', port=5000)
+    except KeyboardInterrupt:
+        print("\n" + "=" * 60)
+        print("Server stopped by user")
+        print("All session data has been cleared")
+        print("Contact IDs will reset to 1 on next startup")

@@ -107,6 +107,50 @@
             color: #6c757d;
             font-size: 0.9rem;
         }
+        .navigation-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            gap: 20px;
+        }
+        .nav-arrow {
+            font-size: 2rem;
+            padding: 10px 15px;
+            border-radius: 50%;
+            border: 2px solid;
+            background-color: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            text-decoration: none;
+        }
+        .nav-arrow.enabled {
+            color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .nav-arrow.enabled:hover {
+            background-color: #0d6efd;
+            color: white;
+            transform: scale(1.1);
+        }
+        .nav-arrow.disabled {
+            color: #6c757d;
+            border-color: #dee2e6;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .contact-counter {
+            font-weight: 600;
+            color: #495057;
+            font-size: 1.1rem;
+            min-width: 150px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -120,6 +164,39 @@
             <p class="text-muted">Your information has been saved successfully.</p>
             <p class="text-muted">Contact ID: <span class="contact-id-badge">#{{ contact.id }}</span></p>
         </div>
+
+        <!-- Navigation Section -->
+        {% if navigation.total_contacts > 1 %}
+        <div class="navigation-section">
+            <!-- Previous Arrow -->
+            {% if navigation.has_prev %}
+                <a href="/success?contact_id={{ navigation.prev_contact_id }}" class="nav-arrow enabled" title="Previous Contact">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            {% else %}
+                <div class="nav-arrow disabled" title="No Previous Contact">
+                    <i class="bi bi-chevron-left"></i>
+                </div>
+            {% endif %}
+
+            <!-- Contact Counter -->
+            <div class="contact-counter">
+                <i class="bi bi-person-fill me-2"></i>
+                {{ navigation.current_position }} of {{ navigation.total_contacts }}
+            </div>
+
+            <!-- Next Arrow -->
+            {% if navigation.has_next %}
+                <a href="/success?contact_id={{ navigation.next_contact_id }}" class="nav-arrow enabled" title="Next Contact">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            {% else %}
+                <div class="nav-arrow disabled" title="No Next Contact">
+                    <i class="bi bi-chevron-right"></i>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
 
         <div class="info-table">
             <table class="table table-striped">
@@ -230,6 +307,46 @@
                     this.style.backgroundColor = '';
                 });
             });
+
+            // Keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                const prevArrow = document.querySelector('.nav-arrow.enabled[title="Previous Contact"]');
+                const nextArrow = document.querySelector('.nav-arrow.enabled[title="Next Contact"]');
+                
+                // Left arrow key or 'A' key for previous
+                if ((e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') && prevArrow) {
+                    e.preventDefault();
+                    prevArrow.click();
+                }
+                
+                // Right arrow key or 'D' key for next
+                if ((e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') && nextArrow) {
+                    e.preventDefault();
+                    nextArrow.click();
+                }
+            });
+
+            // Add visual feedback for navigation arrows
+            const navArrows = document.querySelectorAll('.nav-arrow.enabled');
+            navArrows.forEach(arrow => {
+                arrow.addEventListener('click', function(e) {
+                    // Add a brief animation on click
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+
+            // Show keyboard shortcuts hint
+            const navigationSection = document.querySelector('.navigation-section');
+            if (navigationSection) {
+                const hint = document.createElement('div');
+                hint.innerHTML = '<small class="text-muted"><i class="bi bi-keyboard me-1"></i>Use arrow keys or A/D to navigate</small>';
+                hint.style.textAlign = 'center';
+                hint.style.marginTop = '10px';
+                navigationSection.appendChild(hint);
+            }
         });
     </script>
 </body>

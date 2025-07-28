@@ -198,6 +198,15 @@
         </div>
         {% endif %}
 
+        <!-- User Profile Actions (shown when this is a user profile page) -->
+        {% if is_user_profile %}
+        <div class="user-actions" style="text-align: center; margin-top: 30px;">
+            <a href="/" class="btn btn-secondary" style="background-color: #dc3545; border-color: #dc3545; padding: 12px 30px; border-radius: 8px; text-decoration: none; color: white; font-weight: 600;">
+                <i class="bi bi-box-arrow-right me-2"></i>Logout
+            </a>
+        </div>
+        {% endif %}
+
         <div class="info-table">
             <table class="table table-striped">
                 <thead>

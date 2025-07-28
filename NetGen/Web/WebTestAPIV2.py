@@ -57,14 +57,50 @@ def get_db_connection():
 # Initialize the database when the app starts (resets contact IDs to start from 1)
 init_db()
 
-# Route to serve the index.html file
+# Route to serve the login page as the landing page
 # When a user accesses the root URL '/', this function will be called
 @app.route('/')
-def index():
+def login_page():
     """
-    Renders the index.html template.
+    Renders the login.html template as the landing page.
     """
-    # render_template looks for 'index.html' in the configured template folder
+    return render_template('login.html')
+
+# Route to handle user login
+@app.route('/login', methods=['POST'])
+def login():
+    """
+    Handles user login authentication.
+    """
+    try:
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        if not email or not password:
+            return render_template('login.html', error='Please enter both email and password.')
+        
+        # Check credentials against Users table
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT id, email FROM Users WHERE email = ? AND password = ?', (email, password))
+            user = cursor.fetchone()
+            
+            if user:
+                # Login successful - redirect to user's contact info (success page with user ID)
+                return redirect(f'/user/{user["id"]}')
+            else:
+                # Login failed
+                return render_template('login.html', error='Invalid email or password. Please try again.')
+                
+    except Exception as e:
+        return render_template('login.html', error='An error occurred during login. Please try again.')
+
+# Route to serve the registration form (moved from root)
+@app.route('/register')
+def register():
+    """
+    Renders the index.html template for user registration.
+    """
     return render_template('index.html')
 
 # Define a simple API endpoint
@@ -180,6 +216,56 @@ def get_contacts():
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+
+# Route to display user information after successful login
+@app.route('/user/<int:user_id>')
+def user_profile(user_id):
+    """
+    Route to display the user's information after successful login.
+    Shows user details similar to the success page.
+    """
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Get the user information
+            cursor.execute('SELECT * FROM Users WHERE id = ?', (user_id,))
+            user = cursor.fetchone()
+            
+            if not user:
+                # User not found, redirect to login
+                return redirect('/')
+            
+            # Convert user to dictionary for template
+            user_data = {
+                "id": user["id"],
+                "name": user["email"].split('@')[0].title(),  # Use email prefix as name
+                "email": user["email"],
+                "phone": "N/A",  # Users table doesn't have phone
+                "address": "N/A",  # Users table doesn't have address
+                "message": f"Welcome, {user['email']}!",
+                "created_at": user["created_at"]
+            }
+            
+            # Simple navigation (no prev/next for users)
+            navigation = {
+                "current_position": 1,
+                "total_contacts": 1,
+                "prev_contact_id": None,
+                "next_contact_id": None,
+                "has_prev": False,
+                "has_next": False
+            }
+            
+            return render_template('success.html', contact=user_data, navigation=navigation, is_user_profile=True)
+            
+    except sqlite3.Error as e:
+        # On database error, redirect to login page
+        return redirect('/')
+    
+    except Exception as e:
+        # On any other error, redirect to login page
+        return redirect('/')
 
 @app.route('/success')
 def success():

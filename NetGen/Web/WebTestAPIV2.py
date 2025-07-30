@@ -71,7 +71,9 @@ def init_db():
                 phone TEXT,
                 address TEXT,
                 message TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                contact_owner_id INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (contact_owner_id) REFERENCES users (id)
             )
         ''')
         
@@ -79,9 +81,9 @@ def init_db():
         # We explicitly set the ID here to match the user_id for seamless navigation
         for contact_id, name, email, phone, address, message in contact_entries_for_initial_users:
             cursor.execute('''
-                INSERT INTO contacts (id, name, email, phone, address, message)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (contact_id, name, email, phone, address, message))
+                INSERT INTO contacts (id, name, email, phone, address, message, contact_owner_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (contact_id, name, email, phone, address, message, contact_id))
 
         # Reset the SQLite sequence counter for contacts to ensure AUTOINCREMENT starts from the next available ID
         # after our explicit inserts. For example, if we inserted IDs 1, 2, 3, next autoinc will be 4.
@@ -140,9 +142,22 @@ def login():
 def register_form():
     """
     Renders the index.html template for new user registration.
-    This is now accessed via /register.
+    This is now accessed via /register and requires user to be logged in.
     """
+    # Check if user is logged in
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
     return render_template('index.html')
+
+# --- Logout Route ---
+@app.route('/logout')
+def logout():
+    """
+    Logs out the user by clearing the session and redirects to login page.
+    """
+    session.clear()
+    return redirect(url_for('login'))
 
 @app.route('/api/savecontact', methods=['POST'])
 def savecontact():
@@ -173,13 +188,19 @@ def savecontact():
         if not name.strip():
             return jsonify({"error": "Name is required"}), 400
         
+        # Check if user is logged in
+        if 'user_id' not in session:
+            return jsonify({"error": "User must be logged in to register contacts"}), 401
+        
+        contact_owner_id = session['user_id']
+        
         # Save to database
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO contacts (name, email, phone, address, message)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (name, email, phone, address, message))
+                INSERT INTO contacts (name, email, phone, address, message, contact_owner_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (name, email, phone, address, message, contact_owner_id))
             
             contact_id = cursor.lastrowid
             conn.commit()
@@ -249,12 +270,17 @@ def success():
     """
     Route to display the success page after form submission or login.
     Expects contact_id as a query parameter to display the saved contact.
-    Now includes navigation information for browsing between contacts.
+    Now includes navigation information for browsing between contacts owned by the logged-in user.
     """
+    # Check if user is logged in
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
     contact_id = request.args.get('contact_id')
+    logged_in_user_id = session['user_id']
     
     if not contact_id:
-        # If no contact_id provided, redirect to login page (the new landing page)
+        # If no contact_id provided, redirect to login page
         return redirect(url_for('login'))
     
     try:
@@ -267,25 +293,36 @@ def success():
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
-            # Get all contacts ordered by ID to determine navigation
-            cursor.execute('SELECT id FROM contacts ORDER BY id ASC')
-            all_contact_ids = [row['id'] for row in cursor.fetchall()]
+            # Get all contacts owned by the logged-in user, ordered by ID
+            cursor.execute('SELECT id FROM contacts WHERE contact_owner_id = ? ORDER BY id ASC', (logged_in_user_id,))
+            user_contact_ids = [row['id'] for row in cursor.fetchall()]
             
-            # Check if the requested contact exists
-            if contact_id not in all_contact_ids:
-                return redirect(url_for('login'))
+            # Check if the requested contact exists and belongs to the logged-in user
+            if contact_id not in user_contact_ids:
+                # If contact doesn't belong to user, redirect to their first contact or login
+                if user_contact_ids:
+                    return redirect(url_for('success', contact_id=user_contact_ids[0]))
+                else:
+                    return redirect(url_for('login'))
             
             # Get the specific contact
-            cursor.execute('SELECT * FROM contacts WHERE id = ?', (contact_id,))
+            cursor.execute('SELECT * FROM contacts WHERE id = ? AND contact_owner_id = ?', (contact_id, logged_in_user_id))
             contact = cursor.fetchone()
             
-            # Find current position in the list
-            current_index = all_contact_ids.index(contact_id)
-            total_contacts = len(all_contact_ids)
+            if not contact:
+                return redirect(url_for('login'))
             
-            # Determine previous and next contact IDs
-            prev_contact_id = all_contact_ids[current_index - 1] if current_index > 0 else None
-            next_contact_id = all_contact_ids[current_index + 1] if current_index < total_contacts - 1 else None
+            # Find current position in the user's contact list
+            current_index = user_contact_ids.index(contact_id)
+            total_user_contacts = len(user_contact_ids)
+            
+            # Determine previous and next contact IDs within user's contacts
+            prev_contact_id = user_contact_ids[current_index - 1] if current_index > 0 else None
+            next_contact_id = user_contact_ids[current_index + 1] if current_index < total_user_contacts - 1 else None
+            
+            # Get all contacts for user toggle dropdown (user's own contacts)
+            cursor.execute('SELECT id, name FROM contacts WHERE contact_owner_id = ? ORDER BY created_at DESC', (logged_in_user_id,))
+            user_contacts = cursor.fetchall()
             
             # Convert contact to dictionary for template
             contact_data = {
@@ -295,20 +332,30 @@ def success():
                 "phone": contact["phone"],
                 "address": contact["address"],
                 "message": contact["message"],
-                "created_at": contact["created_at"]
+                "created_at": contact["created_at"],
+                "contact_owner_id": contact["contact_owner_id"]
             }
             
-            # Navigation information
+            # Navigation information (only within user's own contacts)
             navigation = {
                 "current_position": current_index + 1,  # 1-based for display
-                "total_contacts": total_contacts,
+                "total_contacts": total_user_contacts,
                 "prev_contact_id": prev_contact_id,
                 "next_contact_id": next_contact_id,
                 "has_prev": prev_contact_id is not None,
-                "has_next": next_contact_id is not None
+                "has_next": next_contact_id is not None,
+                "is_logged_in": True,
+                "user_id": logged_in_user_id
             }
             
-            return render_template('success.html', contact=contact_data, navigation=navigation)
+            # User toggle information
+            user_toggle = {
+                "current_contact_id": contact_id,
+                "user_contacts": [{"id": row["id"], "name": row["name"]} for row in user_contacts],
+                "has_multiple_contacts": len(user_contacts) > 1
+            }
+            
+            return render_template('success.html', contact=contact_data, navigation=navigation, user_toggle=user_toggle)
             
     except sqlite3.Error as e:
         # On database error, redirect to login page

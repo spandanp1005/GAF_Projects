@@ -9,3 +9,4 @@ CREATE TABLE Users (
 INSERT INTO Users ( email, password) VALUES ("spatel@gmail.com", "spatel123")
 INSERT INTO Users ( email, password) VALUES ("jsmith@gmail.com", "jsmith123")                
 INSERT INTO Users ( email, password) VALUES ("jdoe@gmail.com", "jdoe123")
+SELECT * FROM Users 

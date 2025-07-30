@@ -130,9 +130,17 @@
             submitBtn.disabled = true;
             submitText.textContent = 'Submitting...';
             loadingSpinner.classList.remove('d-none');
-            
+
+            const queryString = window.location.search;
+
+            // 2. Create a new URLSearchParams object
+            const params = new URLSearchParams(queryString);
+
+            // 3. Retrieve a specific parameter by its name
+            // const name = params.get('name'); // Returns "John"
             // Get form data
             const formData = {
+                userid: params.get('userid'), 
                 name: document.getElementById('fullName').value.trim(),
                 email: document.getElementById('email').value.trim(),
                 phone: document.getElementById('phoneNumber').value.trim(),

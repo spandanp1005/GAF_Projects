@@ -152,6 +152,16 @@
             text-align: center;
         }
     </style>
+
+    <script>
+        function loadContacts(){
+            var baseurl = window.location.origin;
+            console.log(baseurl);
+            var url = baseurl + "/register?userid=1";
+            console.log(url); 
+            window.location.href = url; 
+        }
+    </script>
 </head>
 <body>
     <div class="success-container">
@@ -272,9 +282,9 @@
         </div>
 
         <div class="d-flex justify-content-center gap-3">
-            <a href="/" class="btn btn-primary">
+            <button onclick="loadContacts()" class="btn btn-outline-secondary">
                 <i class="bi bi-plus-circle me-2"></i>Add Another Contact
-            </a>
+            </button>
             <button onclick="window.print()" class="btn btn-outline-secondary">
                 <i class="bi bi-printer me-2"></i>Print Information
             </button>

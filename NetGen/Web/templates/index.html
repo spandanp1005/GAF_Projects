@@ -66,61 +66,8 @@
             font-weight: 600;
         }
     </style>
-</head>
-<body>
-    <div class="form-container">
-        <!-- New Header Added Here -->
-        <h1>NetGen</h1>
-        <h2 class="mb-4">User Contact Form</h2>
-        <form id="registrationForm">
-            <!-- Name Field -->
-            <div class="mb-3">
-                <label for="fullName" class="form-label">Full Name</label>
-                <input type="text" class="form-control" id="fullName" name="name" placeholder="Enter your full name" required>
-            </div>
-
-            <!-- Email Field -->
-            <div class="mb-3">
-                <label for="email" class="form-label">Email Address</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email address">
-            </div>
-
-            <!-- Phone Number Field -->
-            <div class="mb-3">
-                <label for="phoneNumber" class="form-label">Phone Number</label>
-                <input type="tel" class="form-control" id="phoneNumber" name="phone" placeholder="e.g., +1 (123) 456-7890" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}|[0-9]{10}" title="Phone number should be 10 digits or in 123-456-7890 format" required>
-                <small class="form-text text-muted">Format: 123-456-7890 or 1234567890</small>
-            </div>
-
-            <!-- Address Field -->
-            <div class="mb-3">
-                <label for="address" class="form-label">Address</label>
-                <textarea class="form-control" id="address" name="address" rows="3" placeholder="Enter your full address" required></textarea>
-            </div>
-
-            <!-- Message Field -->
-            <div class="mb-4">
-                <label for="message" class="form-label">Additional Message (Optional)</label>
-                <textarea class="form-control" id="message" name="message" rows="2" placeholder="Any additional information or message"></textarea>
-            </div>
-
-            <!-- Submit Button -->
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary" id="submitBtn">
-                    <span id="submitText">Register</span>
-                    <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Bootstrap 5 JavaScript Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    
     <script>
-        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
-            e.preventDefault(); // Prevent default form submission
-            
+        async function xxx() {            
             // Get form elements
             const submitBtn = document.getElementById('submitBtn');
             const submitText = document.getElementById('submitText');
@@ -182,7 +129,60 @@
                 submitText.textContent = 'Register';
                 loadingSpinner.classList.add('d-none');
             }
-        });
+        }
+      
     </script>
+</head>
+<body>
+    <div class="form-container">
+        <!-- New Header Added Here -->
+        <h1>NetGen</h1>
+        <h2 class="mb-4">User Contact Form</h2>
+        <form id="registrationForm">
+            <!-- Name Field -->
+            <div class="mb-3">
+                <label for="fullName" class="form-label">Full Name</label>
+                <input type="text" class="form-control" id="fullName" name="name" placeholder="Enter your full name" required>
+            </div>
+
+            <!-- Email Field -->
+            <div class="mb-3">
+                <label for="email" class="form-label">Email Address</label>
+                <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email address">
+            </div>
+
+            <!-- Phone Number Field -->
+            <div class="mb-3">
+                <label for="phoneNumber" class="form-label">Phone Number</label>
+                <input type="tel" class="form-control" id="phoneNumber" name="phone" placeholder="e.g., +1 (123) 456-7890" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}|[0-9]{10}" title="Phone number should be 10 digits or in 123-456-7890 format" required>
+                <small class="form-text text-muted">Format: 123-456-7890 or 1234567890</small>
+            </div>
+
+            <!-- Address Field -->
+            <div class="mb-3">
+                <label for="address" class="form-label">Address</label>
+                <textarea class="form-control" id="address" name="address" rows="3" placeholder="Enter your full address" required></textarea>
+            </div>
+
+            <!-- Message Field -->
+            <div class="mb-4">
+                <label for="message" class="form-label">Additional Message (Optional)</label>
+                <textarea class="form-control" id="message" name="message" rows="2" placeholder="Any additional information or message"></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary" id="submitBtn" onclick="xxx()">
+                    <span id="submitText">Register</span>
+                    <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bootstrap 5 JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    
+    
 </body>
 </html>

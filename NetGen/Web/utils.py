@@ -98,24 +98,54 @@ def init_db():
 
 import requests
 
+
 def call_rest_api(method_type, api_url, queryParamsOrJsonData):
     response = None
-    # Specify the URL of the REST API
-    # Specify any parameters or data to be sent in the request (if needed)
     if method_type == "GET": 
-    # Make the GET request to the API
         response = requests.get(api_url, params=queryParamsOrJsonData)
     else: 
         print(queryParamsOrJsonData)
-        response = requests.post(api_url, data=queryParamsOrJsonData) 
+        response = requests.post(api_url, json=queryParamsOrJsonData) 
+
     # Check if the request was successful
-    if response.status_code == 200:
-        # Parse and print the response JSON
-        print("200=====")
-        print(response)
-        return response.json()
-    
+    if response.status_code >= 200 and response.status_code < 300: # Check for 2xx status codes
+        try:
+            json_data = response.json()
+            print("Successful API Call - JSON Response:")
+            print(json_data)
+            return json_data
+        except requests.exceptions.JSONDecodeError:
+            print("Response is not valid JSON:")
+            print(response.text)
+            # Return a dictionary with an error message and a default user_id
+            return {"message": "Invalid JSON response", "user_id": -1}
     else:
         message = f"Failed to call API. Status code: {response.status_code}. Error ={response.text}"
-        return jsonify({"message": message, "user_id": f"-1"}), 400
+        print(message)
+        # Return a dictionary with an error message and a default user_id
+        return {"message": message, "user_id": -1}
+# def call_rest_api(method_type, api_url, queryParamsOrJsonData):
+#     response = None
+#     # Specify the URL of the REST API
+#     # Specify any parameters or data to be sent in the request (if needed)
+#     if method_type == "GET": 
+#     # Make the GET request to the API
+#         response = requests.get(api_url, params=queryParamsOrJsonData)
+#     else: 
+#         print(queryParamsOrJsonData)
+#         response = requests.post(api_url, json=queryParamsOrJsonData) 
+#     # Check if the request was successful
+#     if response.status_code >= 200:
+#         try:
+#             json_data = response.json()
+#             print("200=====")
+#             print(json_data)
+#             return json_data
+#         except requests.exceptions.JSONDecodeError:
+#             print("Response is not valid JSON:")
+#             print(response.text)
+#             return jsonify({"message": "Invalid JSON response", "user_id": "-1"}), 400
+#     else:
+#         message = f"Failed to call API. Status code: {response.status_code}. Error ={response.text}"
+#         return jsonify({"message": message, "user_id": f"-1"}), 400
     

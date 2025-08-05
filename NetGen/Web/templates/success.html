@@ -217,7 +217,7 @@
         <div class="navigation-section">
             <!-- Previous Arrow -->
             {% if navigation.has_prev %}
-                <a href="/success?contact_id={{ navigation.prev_contact_id }}" class="nav-arrow enabled" title="Previous Contact">
+                <a href="{{ url_for('success', contact_id=navigation.prev_contact_id) }}" class="nav-arrow enabled" title="Previous Contact">
                     <i class="bi bi-chevron-left"></i>
                 </a>
             {% else %}
@@ -234,7 +234,7 @@
 
             <!-- Next Arrow -->
             {% if navigation.has_next %}
-                <a href="/success?contact_id={{ navigation.next_contact_id }}" class="nav-arrow enabled" title="Next Contact">
+                <a href="{{ url_for('success', contact_id=navigation.next_contact_id) }}" class="nav-arrow enabled" title="Next Contact">
                     <i class="bi bi-chevron-right"></i>
                 </a>
             {% else %}
@@ -355,11 +355,11 @@
     <script>
         // Function to switch between user's contacts
         function switchContact() {
-            const selectElement = document.getElementById('contactSelect');
-            const selectedContactId = selectElement.value;
-            if (selectedContactId) {
-                window.location.href = `/success?contact_id=${selectedContactId}`;
-            }
+           const selectElement = document.getElementById('contactSelect');
+           const selectedContactId = selectElement.value;
+           if (selectedContactId) {
+               window.location.href = `/success?contact_id=${selectedContactId}`;
+           }
         }
 
         // Add some interactive effects

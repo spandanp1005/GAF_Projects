@@ -83,6 +83,7 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+
 @app.route('/api/savecontact', methods=['POST'])
 def savecontact():
     """
@@ -176,27 +177,30 @@ def get_contacts():
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
-
-# --- CHANGE 1: Corrected the route decorator for the success page ---
-# It now correctly accepts 'contact_id' as a URL parameter.
-@app.route('/success/<int:contact_id>')
-def success(contact_id):
+@app.route('/success')
+def success():
     """
     Route to display the success page after form submission or login.
-    'contact_id' is now received directly from the URL.
+    'contact_id' is now received from the URL's query parameters.
     """
-    print(f"==== web.py:success() -> contact_id = {contact_id}")
-
-    # Your original session check is now active and is a good practice.
+    # Check if user is logged in
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     logged_in_user_id = session['user_id']
+    contact_id_str = request.args.get('contact_id')
+
+    if not contact_id_str:
+        return redirect(url_for('login')) # No contact ID provided, redirect to login
+    
+    try:
+        contact_id = int(contact_id_str)
+    except (ValueError, TypeError):
+        return redirect(url_for('login')) # Invalid contact ID, redirect to login
+    
+    print(f"==== web.py:success() -> contact_id = {contact_id}")
     print(f"==== web.py:success() -> logged user id = {logged_in_user_id}")
     
-    # We no longer need to get contact_id from request.args.get()
-    # It's already available as a function argument.
-
     try:
         # Check if the requested contact belongs to the logged-in user
         if not (contact_id == logged_in_user_id):
@@ -268,8 +272,94 @@ def success(contact_id):
         print(f"An error occurred in success route: {e}")
         return redirect(url_for('login'))
 
-# --- NEW ROUTE: Added the missing /api/login endpoint ---
-# This is the endpoint that your front-end login form was trying to call.
+# @app.route('/success/<int:contact_id>')
+# def success(contact_id):
+#     """
+#     Route to display the success page after form submission or login.
+#     'contact_id' is now received directly from the URL.
+#     """
+#     print(f"==== web.py:success() -> contact_id = {contact_id}")
+
+#     # Your original session check is now active and is a good practice.
+#     if 'user_id' not in session:
+#         return redirect(url_for('login'))
+
+#     logged_in_user_id = session['user_id']
+#     print(f"==== web.py:success() -> logged user id = {logged_in_user_id}")
+    
+
+#     try:
+#         # Check if the requested contact belongs to the logged-in user
+#         if not (contact_id == logged_in_user_id):
+#             return redirect(url_for('login'))
+        
+#         with utils.get_db_connection() as conn:
+#             cursor = conn.cursor()
+            
+#             cursor.execute('SELECT id FROM contacts WHERE contact_owner_id = ? ORDER BY id ASC', (logged_in_user_id,))
+#             user_contact_ids = [row['id'] for row in cursor.fetchall()]
+            
+#             # Check if the requested contact exists and belongs to the logged-in user
+#             if contact_id not in user_contact_ids:
+#                 if user_contact_ids:
+#                     return redirect(url_for('success', contact_id=user_contact_ids[0]))
+#                 else:
+#                     return redirect(url_for('login'))
+            
+#             cursor.execute('SELECT * FROM contacts WHERE id = ? AND contact_owner_id = ?', (contact_id, logged_in_user_id))
+#             contact = cursor.fetchone()
+            
+#             if not contact:
+#                 return redirect(url_for('login'))
+            
+#             current_index = user_contact_ids.index(contact_id)
+#             total_user_contacts = len(user_contact_ids)
+            
+#             prev_contact_id = user_contact_ids[current_index - 1] if current_index > 0 else None
+#             next_contact_id = user_contact_ids[current_index + 1] if current_index < total_user_contacts - 1 else None
+            
+#             cursor.execute('SELECT id, name FROM contacts WHERE contact_owner_id = ? ORDER BY created_at DESC', (logged_in_user_id,))
+#             user_contacts = cursor.fetchall()
+
+#             contact_data = {
+#                 "id": contact["id"],
+#                 "name": contact["name"],
+#                 "email": contact["email"],
+#                 "phone": contact["phone"],
+#                 "address": contact["address"],
+#                 "message": contact["message"],
+#                 "created_at": contact["created_at"],
+#                 "contact_owner_id": contact["contact_owner_id"]
+#             }
+            
+#             navigation = {
+#                 "current_position": current_index + 1,
+#                 "total_contacts": total_user_contacts,
+#                 "prev_contact_id": prev_contact_id,
+#                 "next_contact_id": next_contact_id,
+#                 "has_prev": prev_contact_id is not None,
+#                 "has_next": next_contact_id is not None,
+#                 "is_logged_in": True,
+#                 "user_id": logged_in_user_id
+#             }
+            
+#             user_toggle = {
+#                 "current_contact_id": contact_id,
+#                 "user_contacts": [{"id": row["id"], "name": row["name"]} for row in user_contacts],
+#                 "has_multiple_contacts": len(user_contacts) > 1
+#             }
+            
+#             return render_template('success.html', contact=contact_data, navigation=navigation, user_toggle=user_toggle)
+            
+#     except sqlite3.Error as e:
+#         print(f"Database error in success route: {e}")
+#         return redirect(url_for('login'))
+    
+#     except Exception as e:
+#         print(f"An error occurred in success route: {e}")
+#         return redirect(url_for('login'))
+
+
 @app.route('/api/login', methods=['POST'])
 def api_login():
     """
